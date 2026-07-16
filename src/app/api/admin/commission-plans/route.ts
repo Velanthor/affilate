@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-guard";
+import type { Database } from "@/types/database";
 
 export async function POST(req: NextRequest) {
   const admin = await requireAdmin();
@@ -62,7 +63,10 @@ export async function PATCH(req: NextRequest) {
   if (typeof isActive === "boolean") updates.is_active = isActive;
   if (typeof isDefault === "boolean") updates.is_default = isDefault;
 
-  const { error } = await service.from("commission_plans").update(updates).eq("id", id);
+  const { error } = await service
+    .from("commission_plans")
+    .update(updates as Database["public"]["Tables"]["commission_plans"]["Update"])
+    .eq("id", id);
   if (error) return NextResponse.json({ error: "Aktualisierung fehlgeschlagen" }, { status: 500 });
 
   await service.from("logs").insert({

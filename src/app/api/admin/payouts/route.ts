@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { mailer } from "@/services/mailer";
 import { formatCurrency } from "@/lib/utils";
+import type { Database } from "@/types/database";
 
 export async function GET(req: NextRequest) {
   const admin = await requireAdmin();
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
     .order("requested_at", { ascending: false });
 
   if (status && status !== "all") {
-    query = query.eq("status", status);
+    query = query.eq("status", status as "open" | "approved" | "rejected" | "paid");
   }
 
   const { data, error } = await query;
@@ -81,7 +82,10 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  const { error } = await service.from("payouts").update(updates).eq("id", payoutId);
+  const { error } = await service
+    .from("payouts")
+    .update(updates as Database["public"]["Tables"]["payouts"]["Update"])
+    .eq("id", payoutId);
   if (error) return NextResponse.json({ error: "Aktualisierung fehlgeschlagen" }, { status: 500 });
 
   const affiliateUser = payout.affiliates?.users as any;

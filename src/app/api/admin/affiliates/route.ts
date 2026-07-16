@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     .order("created_at", { ascending: false });
 
   if (status && status !== "all") {
-    query = query.eq("status", status);
+    query = query.eq("status", status as "pending" | "active" | "suspended" | "banned");
   }
 
   if (search) {

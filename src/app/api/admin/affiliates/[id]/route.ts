@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-guard";
+import type { Database } from "@/types/database";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const admin = await requireAdmin();
@@ -47,7 +48,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "Keine gültigen Felder zum Aktualisieren" }, { status: 400 });
   }
 
-  const { error } = await service.from("affiliates").update(updates).eq("id", params.id);
+  const { error } = await service
+    .from("affiliates")
+    .update(updates as Database["public"]["Tables"]["affiliates"]["Update"])
+    .eq("id", params.id);
 
   if (error) {
     return NextResponse.json({ error: "Aktualisierung fehlgeschlagen" }, { status: 500 });

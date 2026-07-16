@@ -44,18 +44,23 @@ export async function POST(req: NextRequest) {
     .eq("key", `totp_pending:${user.id}`)
     .single();
 
-  if (!pending?.value?.secret) {
+  if (!pending?.value || typeof pending.value !== "object" || Array.isArray(pending.value)) {
     return NextResponse.json({ error: "Keine ausstehende 2FA-Einrichtung gefunden." }, { status: 400 });
   }
 
-  const valid = verifyTotpCode(pending.value.secret, code);
+  const pendingValue = pending.value as { secret?: string; createdAt?: number };
+  if (!pendingValue.secret) {
+    return NextResponse.json({ error: "Keine ausstehende 2FA-Einrichtung gefunden." }, { status: 400 });
+  }
+
+  const valid = verifyTotpCode(pendingValue.secret, code);
   if (!valid) {
     return NextResponse.json({ error: "Ungültiger Code." }, { status: 400 });
   }
 
   await service
     .from("users")
-    .update({ two_factor_enabled: true, two_factor_secret: pending.value.secret })
+    .update({ two_factor_enabled: true, two_factor_secret: pendingValue.secret })
     .eq("id", user.id);
 
   await service.from("settings").delete().eq("key", `totp_pending:${user.id}`);
